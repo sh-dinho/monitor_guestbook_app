@@ -1,5 +1,10 @@
 import * as k8s from "@pulumi/kubernetes";
 import * as pulumi from "@pulumi/pulumi";
+import { prometheus } from "./prometheus";
+
+const config = new pulumi.Config();
+// Get grafanaPassword from config or use default (kube-prometheus-stack default is 'prom-operator')
+const grafanaPassword = config.get("grafanaPassword") || "prom-operator";
 
 export const grafanaService = new k8s.core.v1.Service("grafana-lb", {
     metadata: {
@@ -11,8 +16,7 @@ export const grafanaService = new k8s.core.v1.Service("grafana-lb", {
         ports: [{ port: 80, targetPort: 3000 }],
         selector: { "app.kubernetes.io/name": "grafana" }
     }
-});
+}, { dependsOn: prometheus });
 
-export const grafanaPassword = pulumi
-    .output(k8s.core.v1.Secret.get("grafana", "monitoring/grafana"))
-    .apply(s => Buffer.from(s.data["admin-password"], "base64").toString());
+// Export the Grafana password
+export const grafanaPasswordOutput = pulumi.output(grafanaPassword);

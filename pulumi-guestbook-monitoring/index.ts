@@ -11,5 +11,5 @@ export const grafanaUrl = monitoring.grafanaService.status.loadBalancer.ingress[
     host => `http://${host}`
 );
 
-export const grafanaPassword = monitoring.grafanaPassword;
+export const grafanaPassword = monitoring.grafanaPasswordOutput;
 export const grafanaUser = "admin";

@@ -1,7 +1,7 @@
 {
   "name": "pulumi-guestbook-monitoring",
   "dependencies": {
-    "@pulumi/pulumi": "^3.0.0",
-    "@pulumi/kubernetes": "^4.0.0"
+    "@pulumi/kubernetes": "^4.31.1",
+    "@pulumi/pulumi": "^3.245.0"
   }
 }
