@@ -1,0 +1,10 @@
+{
+  "name": "pulumi-guestbook-monitoring",
+  "dependencies": {
+    "@pulumi/kubernetes": "^4.31.1",
+    "@pulumi/pulumi": "^3.245.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

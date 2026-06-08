@@ -1,3 +1,0 @@
-allowBuilds:
-  '@pulumi/kubernetes': true
-  protobufjs: false
