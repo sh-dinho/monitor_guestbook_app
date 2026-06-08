@@ -1,7 +1,0 @@
-name: components
-description: A minimal Kubernetes TypeScript Pulumi program
-runtime: nodejs
-config:
-  pulumi:tags:
-    value:
-      pulumi:template: kubernetes-typescript
