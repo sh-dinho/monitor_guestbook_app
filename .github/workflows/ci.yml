@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'pulumi-guestbook-monitoring/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'pulumi-guestbook-monitoring/**'
+      - '.github/workflows/ci.yml'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./pulumi-guestbook-monitoring
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Type check
+        run: npx tsc --noEmit
+
+  preview:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    defaults:
+      run:
+        working-directory: ./pulumi-guestbook-monitoring
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Configure Pulumi
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$PULUMI_ACCESS_TOKEN" ]; then
+            echo "Warning: PULUMI_ACCESS_TOKEN not set. Skipping Pulumi preview."
+            exit 0
+          fi
+      
+      - name: Pulumi Preview
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$PULUMI_ACCESS_TOKEN" ]; then
+            echo "Skipping Pulumi preview due to missing token"
+          else
+            npx pulumi preview --stack testing 2>&1 || true
+          fi
+
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [lint]
+    defaults:
+      run:
+        working-directory: ./pulumi-guestbook-monitoring
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Configure Pulumi
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$PULUMI_ACCESS_TOKEN" ]; then
+            echo "Error: PULUMI_ACCESS_TOKEN not set"
+            exit 1
+          fi
+      
+      - name: Deploy to Kubernetes
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        run: |
+          if [ -z "$KUBECONFIG" ]; then
+            echo "Warning: KUBECONFIG not set. Skipping deployment."
+            exit 0
+          fi
+          echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
+          export KUBECONFIG=/tmp/kubeconfig
+          npx pulumi up --yes --stack testing
